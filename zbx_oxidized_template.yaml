@@ -68,8 +68,11 @@ zabbix_export:
           value: '1'
       macros:
         - macro: '{$OXIDIZED_ENABLE_SECRET}'
+          value: UNKNOWN
           description: 'enable secret'
         - macro: '{$OXIDIZED_PASSWORD}'
+          value: UNKNOWN
           description: 'ssh credential'
         - macro: '{$OXIDIZED_USERNAME}'
+          value: UNKNOWN
           description: 'ssh credential'
