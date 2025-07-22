@@ -1,0 +1,75 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 800bd750264840209ce67122f133fccd
+      template: Oxidized_config_backup
+      name: 'Oxidized Config Backup'
+      description: 'Template used to configure options used for triggering config backups with Oxidized service'
+      groups:
+        - name: Templates
+      items:
+        - uuid: b26f08df1bdf490ba9cbf1fccb7f807d
+          name: 'Oxidized config backup age'
+          type: HTTP_AGENT
+          key: oxidized-backup-age
+          delay: 60m
+          trends: '0'
+          units: m
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.mtime
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  value = value.replace(/ UTC/, '');
+                  const backuptime = new Date(value);
+                  const nowtime = new Date();
+                  const backupage = Math.abs((nowtime.getTime() - backuptime.getTime())/60000);
+                  return parseInt(backupage);
+                  
+          url: 'http://oxidized.laminar.local:8181/prod/node/show/{HOST.NAME}.json'
+          triggers:
+            - uuid: 8d6109a4b62a481389d43a4040a71e30
+              expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-age,#1)<75'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-age,#1)>74'
+              name: 'Oxidized backup new'
+              priority: AVERAGE
+              tags:
+                - tag: oxidizedbackup
+                  value: new
+        - uuid: d0c750464b7046b58a0a7a50f623d0bd
+          name: 'Oxidized config backup status'
+          type: HTTP_AGENT
+          key: oxidized-backup-status
+          delay: 60m
+          value_type: TEXT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.last.status
+          url: 'http://oxidized.laminar.local:8181/prod/node/show/{HOST.NAME}.json'
+          triggers:
+            - uuid: 6b1b822abac44409ba88c63f455f9ba4
+              expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-status,#1)<>"success"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-status,#1)="success"'
+              name: 'Oxidized backup error'
+              priority: HIGH
+              tags:
+                - tag: oxidizedbackup
+                  value: error
+      tags:
+        - tag: oxidized
+          value: '1'
+      macros:
+        - macro: '{$OXIDIZED_ENABLE_SECRET}'
+          description: 'enable secret'
+        - macro: '{$OXIDIZED_PASSWORD}'
+          description: 'ssh credential'
+        - macro: '{$OXIDIZED_USERNAME}'
+          description: 'ssh credential'
