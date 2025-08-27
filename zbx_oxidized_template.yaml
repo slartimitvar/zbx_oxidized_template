@@ -5,9 +5,9 @@ zabbix_export:
       name: Templates
   templates:
     - uuid: 800bd750264840209ce67122f133fccd
-      template: Oxidized_config_backup
-      name: 'Oxidized Config Backup'
-      description: 'Template used to configure options used for triggering config backups with Oxidized service'
+      template: Oxidized_config_backup_cmpy
+      name: 'Oxidized Config Backup (<company>)'
+      description: '<company> template used to configure options used for triggering config backups with Oxidized service'
       groups:
         - name: Templates
       items:
@@ -31,13 +31,13 @@ zabbix_export:
                   const backupage = Math.abs((nowtime.getTime() - backuptime.getTime())/60000);
                   return parseInt(backupage);
                   
-          url: 'http://oxidized.laminar.local:8181/prod/node/show/{HOST.NAME}.json'
+          url: 'http://<oxidizedServer>:8181/prod/node/show/{HOST.NAME}.json'
           triggers:
             - uuid: 8d6109a4b62a481389d43a4040a71e30
-              expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-age,#1)<75'
+              expression: 'last(/Oxidized_config_backup_cmpy/oxidized-backup-age,#1)<75'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-age,#1)>74'
-              name: 'Oxidized backup new'
+              recovery_expression: 'last(/Oxidized_config_backup_cmpy/oxidized-backup-age,#1)>74'
+              name: 'Oxidized - new config backup created'
               priority: AVERAGE
               tags:
                 - tag: oxidizedbackup
@@ -52,13 +52,13 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.last.status
-          url: 'http://oxidized.laminar.local:8181/prod/node/show/{HOST.NAME}.json'
+          url: 'http://<oxidizedServer>:8181/prod/node/show/{HOST.NAME}.json'
           triggers:
             - uuid: 6b1b822abac44409ba88c63f455f9ba4
-              expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-status,#1)<>"success"'
+              expression: 'last(/Oxidized_config_backup_cmpy/oxidized-backup-status,#1)<>"success"'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'last(/Oxidized_config_backup_LAM/oxidized-backup-status,#1)="success"'
-              name: 'Oxidized backup error'
+              recovery_expression: 'last(/Oxidized_config_backup_cmpy/oxidized-backup-status,#1)="success"'
+              name: 'Oxidized - config backup error'
               priority: HIGH
               tags:
                 - tag: oxidizedbackup
@@ -71,8 +71,11 @@ zabbix_export:
           value: UNKNOWN
           description: 'enable secret'
         - macro: '{$OXIDIZED_PASSWORD}'
-          value: UNKNOWN
+          value: <switchPassword>
           description: 'ssh credential'
+        - macro: '{$OXIDIZED_SERVER_URL}'
+          value: 'http://<oxidizedServer>:8181/prod/node/show/'
+          description: 'server proto://name:port/path to host.json (NOT CURRENTLY USED)'
         - macro: '{$OXIDIZED_USERNAME}'
-          value: UNKNOWN
+          value: <switchAdmin>
           description: 'ssh credential'
